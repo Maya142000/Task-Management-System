@@ -1,6 +1,5 @@
 module.exports = {
     PasswordValidator: (Password) => {
-  
       if (Password.length < 5) {
         throw new Error('Password should be at least 5 characters long.');
 

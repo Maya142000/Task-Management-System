@@ -16,7 +16,7 @@ module.exports = {
 
       const otp = Math.floor(100000 + Math.random() * 900000);
 
-      const otpcreate = new OTPModel({ OTP: otp,});
+      const otpcreate = new OTPModel({ OTP: otp, Email : Data.Email});
       await otpcreate.save();
 
       const transporter = nodemailer.createTransport({
@@ -53,15 +53,10 @@ module.exports = {
 
 
   // Register API------->
-  Register: async (req, res) => {
+  Register: async (req, res, next) => {
     try {
       const Data = req.body;
       const NewData = { ...Data };
-
-      // const existingUser = await OTPModel.findOne({ $and : [{ Email: NewData.Email }] });
-      // if (!existingUser) {
-      //   return res.send({ status: false, message: "You’re already Registered, Please Sign in..!" });
-      // }
 
       const verifiedOTP = await OTPModel.findOne({ $and : [{ _id: NewData.id }, { OTP: NewData.OTP }] });
       if (!verifiedOTP) {
@@ -134,9 +129,77 @@ loginUser: async (req, res, next) => {
     } catch (error) {
         return res.send({
           status: false,
-          message: "Error in Try",
+          message: "Internal Server error..!",
           error: error.message,
         });
       }
     },
-  };
+
+
+    verifyOTP : async (req, res) => {
+      try {
+        const { Email , OTP } = req.body
+
+        if (!Email) {
+          return res.send({ status : false, message : "Please enter your Email..!"});
+        }
+
+        const verifyOTP = await OTPModel.findOne({ $and : [ { Email : Email }] })
+        console.log('........verifyOTP.........',verifyOTP)
+        await OTPModel.deleteOne({ Email : Email})
+
+        if ( verifyOTP.OTP == OTP ) {
+          return res.send({ status : false, message : "OTP Verfied Succesfully...", Data : verifyOTP.OTP })
+        } else {
+          return res.send({ status : true, message : "Please enter valid OTP...", error : error.message })
+        }
+        
+      } catch (error) {
+        return res.send({
+          status : false,
+          message : "Internal Server error...!",
+          error : error.message
+        })
+      }
+    },
+
+
+  Update : async (req, res, next) => {
+    try {
+      const Data = req.body
+
+      const findUser = await UserModel.findOne({ Email : Data.Email })
+      if(!findUser){
+        return res.send({ status : false, message : "User Not Found...!"});
+      }
+
+      const hashedPassword = await bcrypt.hash(Data.Password, 10);
+
+      await UserModel.findByIdAndUpdate(
+        { _id : findUser._id },
+        { $set : { Password : hashedPassword }},
+        { new : true }
+      ).then((response) => {
+        return res.send({
+          status : true,
+          message : "Password has been changed successfully!",
+          Data : response
+        })
+      }).catch (error => {
+        return res.send({
+          status : false,
+          message : "Failed to change the password.",
+          error : error.message
+        })
+      })
+      
+    } catch (error) {
+      return res.send({
+        status: false,
+        message: "Internal Server error..!",
+        error: error.message,
+      });
+    }
+  }
+
+};

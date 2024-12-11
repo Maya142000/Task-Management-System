@@ -8,6 +8,9 @@ module.exports = {
         try {
             const NewData = req.body
 
+            const existingUser = await UserModel.findOne({ Email: NewData.Email }).exec();
+            if (!existingUser) return res.send({ status: 401, success: false, message: "User Already Exist...!" });
+
             if (!NewData.FirstName) {
                 res.send({ status : false, message : "Please provide your first Name..!" })
             }
@@ -46,7 +49,7 @@ module.exports = {
             if (!res.headersSent) {
                 return res.status(500).json({
                     status : false,
-                    message : "Error in try",
+                    message : "Internal Server error..!",
                     error : error.message
                 })
             }
@@ -77,9 +80,37 @@ module.exports = {
         } catch (error) {
             res.send({ 
                 status: false, 
-                message: 'Error in Try', 
+                message: 'Internal Server error..!', 
                 error: error.message 
             });
+        }
+    },
+
+
+    authChangePassword : async (req, res, next) => {
+        try {
+            const { Password, Email }  = req.body
+
+            const existingUser = await UserModel.findOne({ Email: Email }).exec();
+            if (!existingUser) return res.send({ status: 401, success: false, message: "Please enter your Email..!" });
+
+            try {
+                PasswordValidator(Password);
+            } catch (error) {
+                return res.send({
+                    status : 400,
+                    success: false,
+                    error : error.message
+                })
+            }
+            next();
+            
+        } catch (error) {
+            return res.send({
+                status : false,
+                message : "Internal Server error..!",
+                error : error.message
+            })
         }
     }
     
