@@ -9,7 +9,7 @@ module.exports = {
             const NewData = req.body
 
             const existingUser = await UserModel.findOne({ Email: NewData.Email }).exec();
-            if (!existingUser) return res.send({ status: 401, success: false, message: "User Already Exist...!" });
+            if (existingUser) return res.send({ status: 401, success: false, message: "User Already Exist...!" });
 
             if (!NewData.FirstName) {
                 res.send({ status : false, message : "Please provide your first Name..!" })

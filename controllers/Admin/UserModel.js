@@ -28,9 +28,18 @@ const UserSchema = new mongoose.Schema({
     },
     Password : {
         type : String,
-        default : ""
+        default : "",
+        required : true
     },
     // Confirm_Password : {
+    //     type : String,
+    //     default : ""
+    // }
+    UserID : {
+        type : Number,
+        default : 0
+    },
+    // UserName : {
     //     type : String,
     //     default : ""
     // }
