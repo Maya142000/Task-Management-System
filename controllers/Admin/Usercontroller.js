@@ -53,15 +53,10 @@ module.exports = {
 
 
   // Register API------->
-  Register: async (req, res, next) => {
+  Register: async (req, res) => {
     try {
       const Data = req.body;
       const NewData = { ...Data };
-
-      const verifiedOTP = await OTPModel.findOne({ $and : [{ _id: NewData.id }, { OTP: NewData.OTP }] });
-      if (!verifiedOTP) {
-        return res.send({ status: false, message: "Please enter a valid OTP.....!" });
-      }
 
       const hashedPassword = await bcrypt.hash(NewData.Password, 10);
 
@@ -69,26 +64,19 @@ module.exports = {
       const latestIncrement = ( OldUserID && OldUserID.UserID ) || 0 
 
       const Usercreate = new UserModel({
-        FirstName: NewData.FirstName,
-        LastName: NewData.LastName,
-        FullName: `${NewData.FirstName} ${NewData.LastName}`,
+        FullName: NewData.Name,
+        User: NewData.User,
         Email: NewData.Email,
-        OTP: NewData.OTP,
         Password: hashedPassword,
-        // Confirm_Password: hashedPassword
-        // UserName: NewData.UserName,
         UserID: latestIncrement + 1,
       });
       await Usercreate.save();
-
-      await OTPModel.deleteOne({ _id: NewData.id });
 
       return res.send({
         status: true,
         message: "You have registered successfully...!",
         Data: Usercreate,
     });
-    next();
 
     } catch (error) {
     if (!res.headersSent) {
@@ -109,9 +97,9 @@ loginUser: async (req, res, next) => {
       const { Email, Password } = req.body;
 
       const existingUser = await UserModel.findOne({ Email: Email }).exec();
-      if (!existingUser) {
-        return res.send({ status: 401, success: false, message: "To continue, please sign up first." });
-      }
+      // if (!existingUser) {
+      //   return res.send({ status: 401, success: false, message: "To continue, please sign up first." });
+      // }
 
       const PasswordMatch = await bcrypt.compare( Password, existingUser.Password );
 
@@ -151,12 +139,12 @@ loginUser: async (req, res, next) => {
         }
 
         const verifyOTP = await OTPModel.findOne({ $and : [ { Email : Email }] })
-        await OTPModel.deleteOne({ Email : Email})
-
+        
         if ( verifyOTP && verifyOTP.OTP === OTP ) {
-          return res.send({ status : false, message : "OTP Verfied Succesfully...", Data : verifyOTP.OTP })
+          await OTPModel.deleteOne({ Email : Email})
+          return res.send({ status : true, message : "OTP Verfied Succesfully...", Data : verifyOTP.OTP })
         } else {
-          return res.send({ status : true, message : "Please enter valid OTP..." })
+          return res.send({ status : false, message : "Please enter valid OTP..." })
         }
         
       } catch (error) {
@@ -170,7 +158,7 @@ loginUser: async (req, res, next) => {
 
 
   // Forgot Password API(Update) -------->  
-  Update : async (req, res, next) => {
+  Update : async (req, res) => {
     try {
       const Data = req.body
 
@@ -183,7 +171,9 @@ loginUser: async (req, res, next) => {
 
       await UserModel.findByIdAndUpdate(
         { _id : findUser._id },
-        { $set : { Password : hashedPassword }},
+        { $set : 
+          { Password : hashedPassword }
+        },
         { new : true }
       ).then((response) => {
         return res.send({

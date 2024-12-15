@@ -10,21 +10,17 @@ module.exports = {
 
             const existingUser = await UserModel.findOne({ Email: NewData.Email }).exec();
             if (existingUser) return res.send({ status: 401, success: false, message: "User Already Exist...!" });
-
-            if (!NewData.FirstName) {
-                res.send({ status : false, message : "Please provide your first Name..!" })
-            }
-
-            if (!NewData.LastName) {
-                res.send({ status : false, message : "Please provide your Last Name..!" })
+            
+            if (!NewData.Name) {
+                res.send({ status : false, message : "Please provide your Name..!" })
             }
 
             if (!NewData.Email) {
                 res.send({ status : false, message : "Please enter your Email..!" })
             }
 
-            if (!NewData.OTP) {
-                return res.send({ status : false, message : "Please enter your OTP..!" })
+            if (!NewData.User) {
+                return res.send({ status : false, message : "Please enter your UserName..!" })
             }
 
             if (!NewData.Password) {
@@ -90,11 +86,13 @@ module.exports = {
     authChangePassword : async (req, res, next) => {
         try {
             const { Password, Email }  = req.body
-
-            const existingUser = await UserModel.findOne({ Email: Email }).exec();
-            if (!existingUser) return res.send({ status: 401, success: false, message: "Please enter your Email..!" });
-
+            
+            if (!Email) {
+                return res.send({ status: 404, success: false, message: "Please enter your Email..!" });
+            }
+            
             try {
+                emailValidator(Email);
                 PasswordValidator(Password);
             } catch (error) {
                 return res.send({
@@ -113,6 +111,5 @@ module.exports = {
             })
         }
     }
-    
 
 };
